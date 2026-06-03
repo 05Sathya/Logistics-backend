@@ -16,7 +16,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
     validate(payload: JwtPayload): Promise<{
         userId: string;
         email: string;
-        role: "client" | "rider" | "admin";
+        role: "admin" | "client" | "rider";
     }>;
 }
 export {};

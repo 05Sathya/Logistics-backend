@@ -15,7 +15,7 @@ import { RedisModule } from './redis/redis.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot(process.env.DATABASE_URL || 'mongodb://localhost:27017/logistics'),
+    MongooseModule.forRoot(process.env.DATABASE_URL || process.env.MONGO_URI || 'mongodb://localhost:27017/logistics'),
     AuthModule, 
     UsersModule, 
     OrdersModule, 

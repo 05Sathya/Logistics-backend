@@ -29,6 +29,9 @@ let UsersService = class UsersService {
         const createdUser = new this.userModel(user);
         return createdUser.save();
     }
+    async findClients() {
+        return this.userModel.find({ role: 'client' }).select('-passwordHash').exec();
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

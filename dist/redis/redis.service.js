@@ -17,6 +17,8 @@ let RedisService = class RedisService {
     configService;
     client;
     logger = new common_1.Logger('RedisService');
+    isConnected = false;
+    errorLogged = false;
     constructor(configService) {
         this.configService = configService;
     }
@@ -25,31 +27,51 @@ let RedisService = class RedisService {
         const port = this.configService.get('REDIS_PORT') || 6379;
         this.client = (0, redis_1.createClient)({
             url: `redis://${host}:${port}`,
+            socket: {
+                reconnectStrategy: (retries) => {
+                    if (retries >= 3) {
+                        if (!this.errorLogged) {
+                            this.logger.warn(`Redis unavailable at redis://${host}:${port}. Caching disabled — app will run without it.`);
+                            this.errorLogged = true;
+                        }
+                        return false;
+                    }
+                    return Math.min(retries * 500, 2000);
+                },
+            },
         });
-        this.client.on('error', (err) => this.logger.error(`Redis Client Error: ${err}`));
+        this.client.on('error', () => { });
         try {
             await this.client.connect();
+            this.isConnected = true;
             this.logger.log(`Connected to Redis at redis://${host}:${port}`);
         }
-        catch (err) {
-            this.logger.error(`Failed to connect to Redis: ${err}`);
+        catch {
+            this.isConnected = false;
+            if (!this.errorLogged) {
+                this.logger.warn(`Redis unavailable at redis://${host}:${port}. Caching disabled — app will run without it.`);
+                this.errorLogged = true;
+            }
         }
     }
     async onModuleDestroy() {
-        if (this.client) {
+        if (this.client && this.isConnected) {
             await this.client.disconnect();
         }
     }
     async get(key) {
+        if (!this.isConnected)
+            return null;
         try {
             return await this.client.get(key);
         }
-        catch (err) {
-            this.logger.error(`Redis GET error for key ${key}: ${err}`);
+        catch {
             return null;
         }
     }
     async set(key, value, ttlSeconds) {
+        if (!this.isConnected)
+            return;
         try {
             if (ttlSeconds) {
                 await this.client.set(key, value, { EX: ttlSeconds });
@@ -58,17 +80,20 @@ let RedisService = class RedisService {
                 await this.client.set(key, value);
             }
         }
-        catch (err) {
-            this.logger.error(`Redis SET error for key ${key}: ${err}`);
+        catch {
         }
     }
     async del(key) {
+        if (!this.isConnected)
+            return;
         try {
             await this.client.del(key);
         }
-        catch (err) {
-            this.logger.error(`Redis DEL error for key ${key}: ${err}`);
+        catch {
         }
+    }
+    get connected() {
+        return this.isConnected;
     }
 };
 exports.RedisService = RedisService;

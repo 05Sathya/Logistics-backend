@@ -15,4 +15,8 @@ export class UsersService {
     const createdUser = new this.userModel(user);
     return createdUser.save();
   }
+
+  async findClients(): Promise<UserDocument[]> {
+    return this.userModel.find({ role: 'client' }).select('-passwordHash').exec();
+  }
 }

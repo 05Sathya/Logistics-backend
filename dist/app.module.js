@@ -27,7 +27,7 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
-            mongoose_1.MongooseModule.forRoot(process.env.DATABASE_URL || 'mongodb://localhost:27017/logistics'),
+            mongoose_1.MongooseModule.forRoot(process.env.DATABASE_URL || process.env.MONGO_URI || 'mongodb://localhost:27017/logistics'),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             orders_module_1.OrdersModule,
